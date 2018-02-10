@@ -1,0 +1,143 @@
+---
+title: "RK_607_Assignment02_DB"
+author: "Raj Kumar"
+date: "February 9, 2018"
+output:
+  html_document:
+    css: ./lab.css
+    highlight: pygments
+    theme: cerulean
+  pdf_document: default
+---
+
+## Assignment - SQL and R
+### Choose six recent popular movies. Ask at least five people that you know (friends, family, classmates, imaginary friends) to rate each of these movie that they have seen on a scale of 1 to 5. Take the results (observations) and store them in a SQL database. Load the information into an R dataframe.
+###Your deliverables should include your SQL scripts and your R Markdown code, posted to GitHub.
+###This is by design a very open ended assignment. A variety of reasonable approaches are acceptable. You can (and should) blank out your SQL password if your solution requires it; otherwise, full credit requires that your code is "reproducible," with the assumption that I have the same database server and R software.
+
+
+### I choose a combination of English and Hindi movies that our family had watched recently 
+### Movie Names: Bahubali2, Dunkrik, Judwaa2, Jumanji2, Mubarakan and Padmavaat
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Setup the Table 
+###I created a table 'movies' with three columns
+###    1. mnane: movie name as varchar(100) not null
+###    2. fname: friend name as varchar(100) not null
+###    3. rating: ratings for the movie as an int
+### Please see the SQL script (movie.sql) for more details
+
+    
+1.  Load the Libraries  
+
+### Load the required libraries
+```{r}
+## Load the Libraries 
+library(RMySQL)
+library(odbc)
+library(ggplot2)
+
+```
+
+    
+2.  Connect to the My SQL Database  
+
+### Connect to mySQL Database
+```{r}
+
+## connect using dbConnect
+mydb = dbConnect(MySQL(), user='root', password='mysql57', host='localhost', dbname="tb")
+
+```
+
+
+3. Query the Data base 
+
+### Query the database
+```{r}
+moviedf = fetch(dbSendQuery(mydb, "select * from movies;"))
+
+```
+
+4. Review the results from the memory
+
+### Review the results 
+```{r}
+dim(moviedf)
+moviedf
+
+```
+
+5.  Analysis of the data for each movie
+
+### Data Analysis for each movie 
+
+```{r}
+
+#Print the rating for each movie and find the means rating 
+
+
+moviedf$rating[which(moviedf$mname=="Bahubali2")]
+m1 = mean(moviedf$rating[which(moviedf$mname=="Bahubali2")])
+m1
+
+moviedf$rating[which(moviedf$mname=="Dunkrik")]
+m2 = mean(moviedf$rating[which(moviedf$mname=="Dunkrik")])
+m2 
+
+moviedf$rating[which(moviedf$mname=="Judwaa2")]
+m3 = mean(moviedf$rating[which(moviedf$mname=="Judwaa2")])
+m3
+
+moviedf$rating[which(moviedf$mname=="Jumanji2")]
+m4 = mean(moviedf$rating[which(moviedf$mname=="Jumanji2")])
+m4
+
+moviedf$rating[which(moviedf$mname=="Mubarakan")]
+m5 = mean(moviedf$rating[which(moviedf$mname=="Mubarakan")], na.rm=TRUE)
+m5
+
+moviedf$rating[which(moviedf$mname=="Padmavaat")]
+m6 = mean(moviedf$rating[which(moviedf$mname=="Padmavaat")], na.rm = TRUE)
+m6
+
+
+
+
+
+```
+### Lets find the Best and Worst movie... Drum rolls!!!
+```{r}
+allrating <- c(m1, m2, m3, m4, m5, m6) 
+names(allrating) <- names(table(moviedf$mname))
+
+# And the highest rated movie was .... drum roll!!!
+allrating[which(allrating==max(allrating))]
+
+
+# And the lowest rated movie was .... booooooo!!!
+allrating[which(allrating==min(allrating))]
+
+```
+
+
+6. Analysis using GGPLOT2 
+### let draw a GGPlot for the ratings
+```{r}
+# Draw a GGPlot to show how each movie was rated 
+# I am using Box Plot as it can show the range of reviews and provide a mean for these ratings
+ggplot(moviedf, aes(mname, rating))+
+    geom_boxplot(na.rm = TRUE, color = 'blue', outlier.color = 'green')+
+    theme_bw()+
+    labs(title="Movie Review", x="Movie Name", y="Star Ratings")+
+    theme(plot.title = element_text(hjust = 0.5))
+
+
+```
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

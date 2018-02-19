@@ -1,0 +1,137 @@
+---
+title: "RK_607_Assignment03_REGEX"
+author: "Raj Kumar"
+date: "February 9, 2018"
+output:
+  html_document:
+    css: ./lab.css
+    highlight: pygments
+    theme: cerulean
+  pdf_document: default
+---
+
+## Assignment 03 - REGEX
+### Here is the referenced code for the introductory example in #3:
+### raw.data <-"555-1239Moe Szyslak(636) 555-0113Burns, C. Montgomery555-6542Rev. Timothy Lovejoy555 8904Ned Flanders636-555-3226Simpson, Homer5553642Dr. Julius Hibbert" 
+
+
+## Character Data Exploration with REGEX
+
+### STEP 1 : Always load your libraries
+```{r}
+library(stringr)
+```
+
+### STEP 1 : Data Setup 
+```{r}
+raw.data <-"555-1239Moe Szyslak(636) 555-0113Burns, C. Montgomery555-6542Rev. Timothy Lovejoy555 8904Ned Flanders636-555-3226Simpson, Homer5553642Dr. Julius Hibbert"
+
+name <- unlist(str_extract_all(raw.data, "[[:alpha:]., ]{2,}"))
+name
+phone <- unlist(str_extract_all(raw.data, "\\(?(\\d{3})?\\)?(-| )?\\d{3}(-| )?\\d{4}"))
+phone
+
+data.frame(name=name, phone=phone)
+
+```
+
+
+1. Copy the introductory examples. The Vector names stores the extracted names
+
+###(a) Use the tools of this chapter to rearrange the vector so that all elements conform to the standard first_name last_name.
+```{r}
+name
+
+tempname <- str_replace_all(name, "(.+)(, .+)$", "\\2 \\1") 
+tempname <- str_replace_all(tempname, ", ", "") 
+tempname <- str_replace_all(tempname, "[A-Z][a-z]([a-z]?)\\.", "") 
+tempname
+
+# Create lists with first name and last name
+fname <- str_extract(tempname, "[[:alpha:]+]{2,}")
+lname <- str_extract(tempname, "[[:space:]][[:alpha:]+]{2,}")
+fname
+lname
+
+namedf <- data.frame(fname=fname, lname=lname)
+namedf
+```
+
+
+###(b) Construct a logical vector indicating whether a character has a title (i.e., Rev. and Dr.).
+
+```{r}
+hasTitle <- str_detect(name, "Rev.|Dr.")
+hasTitle
+```
+
+
+###(c) Construct a logical vector indicating whether a character has a second name.
+```{r}
+hasSecondName <- str_detect(name, "[A-Z]\\.")
+hasSecondName
+```
+
+
+2. Describe the types of strings that conform to the following regular expressions and construct an example that is matched by the regular expression.
+
+###(a) Any string with $ sign
+```{r }
+pattern <-  "[0-9]+\\$"
+list=c("555$","ab12$USD",".01$","23213.121")
+str_detect(list,pattern)
+```
+
+###(b) Any string with a-z only
+```{r }
+pattern <-  "\\b[a-z]{1,4}\\b"
+list=c("a","bb212", "xyzbc","xz","aaa","12abcdefgh12a", "1234")
+str_detect(list,pattern)
+
+```
+
+###(c) match string with .txt ending
+```{r }
+pattern <-  ".*?\\.txt$"
+list=c("a.txt","bb212", "xyzbc.txt","xz","aaa.txt","12abcdefgh12a", "1234.txt")
+str_detect(list,pattern)
+
+```
+
+
+###(d) Match number in data format
+```{r }
+pattern <-  "\\d{2}/\\d{2}/\\d{4}"
+list=c("10/10/2015 Check Date", "20202015", "someone2018/02/07", "99999999", "99/99/9999")
+str_detect(list,pattern)
+
+```
+
+###(e) Tag Format
+```{r}
+pattern <-  "<(.+?)>.+?</\\1>"
+list=c("<b>name</b>", "<a href=testurl>link</a>", "324324 sdsadd 213213","<xml><head></head></xml>", "99999999")
+str_detect(list,pattern)
+```
+
+
+3. The following code hides a secret message. Crack it with R and regular expressions. Hint: Some of the characters are more revealing than others! The code snippet is also available in the materials at www.r-datacollection.com
+
+```{r}
+##
+# The message clearly is written in capital, so we can just extract everything in capital
+##
+message <- "clcopCow1zmstc0d87wnkig7OvdicpNuggvhryn92Gjuwczi8hqrfpRxs5Aj5dwpn0TanwoUwisdij7Lj8kpf03AT5Idr3coc0bt7yczjatOaootj55t3Nj3ne6c4Sfek.r1w1YwwojigOd6vrfUrbz2.2bkAnbhzgv4R9i05zEcrop.wAgnb.SqoU65fPa1otfb7wEm24k6t3sR9zqe5fy89n6Nd5t9kc4fE905gmc4Rgxo5nhDk!gr"
+
+unlist(str_extract_all(message, "[[:upper:].!]"))
+
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

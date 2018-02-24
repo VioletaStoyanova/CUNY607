@@ -1,0 +1,293 @@
+---
+title: "RK_607_Project01"
+author: "Raj Kumar"
+date: "February 22, 2018"
+output:
+  html_document:
+    css: ./lab.css
+    highlight: pygments
+    theme: cerulean
+  pdf_document: default
+---
+
+## PROJECT 01: Chess Player Rating Ingestion Tool
+
+
+### INDEX (Step by Step)
+#####    STEP 1. Load Libraries
+#####    STEP 2. Load the file
+#####    STEP 3. Data Extraction:Regex the file data 
+#####    STEP 4. Data Munging: Create measurement of opponents score
+#####    STEP 5. Data Munging: Create a final dataframe as suggested in the problem
+#####    STEP 6. Create interactive Data Table from the dataframe
+#####    STEP 7. Dump the data into CSV file
+#####    STEP 8. Use the SQL script to create new chess table and load newly created csv file into the chess table
+#####    STEP 9. Query the chess table from this RMD and check the results
+#####    STEP 10. success!!
+
+
+### IMPORTANT PROJECT ASSUMPTIONS 
+#####    Assumption 1. Pre Tournament rating was considered as player's rating for final table
+#####    Assumption 2. For Opponent avg. score calculation: 
+#####                   a. All opponents numbers were matched with their numbers in the file
+#####                   b. The codes like U and H where no value for opponent was given in the file were ignored from the calculation in order to make sure data is valid
+#####    Assumption 3. Rating (example 1220P13) was treated as rating of 1220 as meaning of P13 was not clear. 
+
+
+## STEP 1 : Load your libraries
+```{r}
+# Load the libraries
+library(stringr)    #For Regex
+library(RCurl)      #For File Operations
+library(dplyr)      #For Manipulating the data frames
+library(DT)         #For Data table package
+library(RMySQL)     #For SQL Operations
+library(ggplot2)    #For Visualizations
+
+```
+
+## STEP 2 : Load the File
+```{r}
+# Good Practise: Basic house keeping: cleanup the env before you start new work
+rm(list=ls())
+
+# Good Practise: Set up the Working Directory when working with a file system
+setwd("C:\\CUNY\\607Data\\Assignments\\project01")
+
+# Read the File
+raw.file.data <- readLines("tournamentinfo.txt")
+
+# Make sure file loaded correct
+head(raw.file.data)
+```
+
+
+## STEP 3 : Data Extraction:Regex the file data 
+
+#### Regex to find Player Names
+```{r}
+
+##
+# Now the cleanup fun begins
+##
+
+##  
+#   I created my regex and tested these using website 
+#   http://rubular.com/
+##
+
+
+##  
+#   Regex name of the players
+##
+namenum        <- unlist(str_extract_all(raw.file.data, 
+                                      "\\d{1,2}[ ]\\|[ ]([A-Z]+[ ]){2,3}"))
+name        <- unlist(str_extract_all(namenum, "([A-Z]+[ ]){2,3}"))
+name        <- trimws(name, which = c("both"))
+name
+
+```
+
+
+#### Regex to find Player Numbers
+```{r}
+##  
+#   Regex number of the players
+##
+pnum   <- as.numeric(unlist(str_extract_all(namenum, "\\d{1,2}")))
+pnum
+
+```
+
+
+#### Regex to find Player Pre Tournament Rating
+```{r}
+##  
+#   Regex players rating
+##
+rating      <- unlist(str_extract_all(raw.file.data, "R:[ ]+(\\d{3,4})"))
+rating      <- as.numeric(unlist(str_extract_all(rating, "\\d{3,4}")))
+rating
+
+
+```
+
+
+
+#### Regex to find Player State
+```{r}
+##  
+#   Regex players state
+##
+state     <- unlist(str_extract_all(raw.file.data, "\\b([A-Z]{2})[ ]\\|"))
+state     <- unlist(str_extract_all(state, "[A-Z]{2}"))
+state
+
+
+
+```
+
+
+#### Regex to find Player Points
+```{r}
+##  
+#   Regex the points
+##
+points      <- as.numeric(unlist(str_extract_all(raw.file.data, "\\d\\.\\d")))
+points
+
+```
+
+
+#### Create a Dataframe with the data
+```{r}
+pointsdf <- data.frame(pnum=pnum, name=name, state=state, points=points, rating=rating)
+head(pointsdf)
+
+
+```
+
+
+
+## STEP 4: Create measurement of opponents scores
+
+#### Cleanup the file further to find list of opponents for each player
+```{r}
+## Cleanup lines to derive the average of opponents
+
+# Remove the lines that just contain ------- 
+raw.data <- str_extract_all(raw.file.data, "^(?!.*--.*).+$")
+
+# Create a list of opponents each player played
+opponentslist <-  str_extract_all(raw.data,"[WLDHU][ ]+\\d{1,2}")
+
+# remove any empty rows from the list
+opponentslist <- opponentslist[lapply(opponentslist,length)>0]
+
+#check the list before processing futher
+opponentslist
+
+
+```
+
+
+#### For loop to compute opponent averages for all the players
+```{r}
+# Compute the average value for all the opponents
+
+avg_list <- c()
+for (i in 1:64){
+        sum <- 0
+        for (j in 1:length(opponentslist[[i]])){
+            opponent <- as.numeric(str_extract_all(
+                opponentslist[[i]][j], "\\d{1,2}"))            
+                sum <- sum + as.numeric(as.character(
+                    pointsdf$rating[which(pointsdf$pnum==opponent)][1]))
+        }
+        #print(sum)
+        avg_list[i] <- round(sum/length(opponentslist[[i]]))
+}
+#all opponent averages
+avg_list
+
+```
+
+
+#### Add the opponent averages to the existing data frame
+```{r}
+# Add the opponext average to the existing data frame
+pointsdf["opponentAvg"] <- avg_list
+
+```
+
+
+## STEP 5: Create a final dataframe as suggested in the problem
+```{r}
+##
+# Cleanup and format the dataframe 
+##
+
+pointsdf <- subset(pointsdf, select = c(name, state, points, rating, opponentAvg))
+
+format(pointsdf$points, digits=1, nsmall=1)
+
+head(pointsdf)
+
+```
+
+
+## STEP 6: Create a Beautiful Data Table for the data frame 
+```{r}
+datatable(pointsdf)
+
+```
+
+## STEP 7: Write the dataframe to CSV file
+```{r}
+## Write the file in CSV format to the disk
+write.table(pointsdf, "chessdata.csv", sep=",", row.names=FALSE, col.names=FALSE)
+```
+
+## STEP 8: SQL SCript to create chess table
+```{r}
+# Create a database connection
+mydb = dbConnect(MySQL(), user='root', password='mysql57', host='localhost', dbname="tb")
+
+```
+
+#### Exhibits for my SQL Scripts to create tables
+```{ }
+/*
+ The below are just exhibits from the SQL Script which I ran using mysql databases
+ This Script create the table in the database
+ The actual script is attached with this project RMD code 
+ 
+ A. Create Table
+ B. Insert the rows using the CSV created by the above write.csv command
+ C. Check the results
+*/
+
+/*
+DROP TABLE IF EXISTS chess;
+
+# Create new table
+CREATE TABLE chess 			
+(
+  name varchar(100) NOT NULL,  
+  state varchar(10) NOT NULL,  
+  points float4 NOT NULL,  
+  rating int NOT NULL,  
+  opponentavg int NOT NULL	 
+);
+
+LOAD DATA INFILE 'C:\\ProgramData\\MySQL\\MySQL Server 5.7\\Uploads\\chessdata.csv'  
+INTO TABLE chess 
+FIELDS TERMINATED BY ','  
+lines terminated BY "\n";
+
+*/
+```
+
+
+
+## STEP 9: Database connection to check SQL operations
+```{r}
+##
+# Create a Database connection
+##
+
+mysqloutput <- fetch(dbSendQuery(mydb, "select * from chess;"))
+
+head(mysqloutput)
+```
+
+## STEP 10: Success!!
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

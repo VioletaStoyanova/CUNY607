@@ -1,0 +1,186 @@
+---
+title: "RK_607_Assignment05_TidyR_Dplyr"
+author: "Raj Kumar"
+date: "March 2, 2018"
+output:
+  html_document:
+    css: ./lab.css
+    highlight: pygments
+    theme: cerulean
+  pdf_document: default
+---
+
+## Assignment 05 - Tidying and Transforming Data
+
+## 
+
+### STEP 1 : Always load your libraries
+```{r}
+# Good Practise: Basic house keeping: cleanup the env before you start new work
+rm(list=ls())
+
+# Libraries 
+library(tidyverse)
+library(RMySQL)
+library(ggplot2)
+library(knitr)
+
+```
+
+### STEP 2 :  MySQL DAtabase Connection
+##### Create a .CSV file (or optionally, a MySQL database!) that includes all of the information above. You're encouraged to use a "wide" structure similar to how the information appears above, so that you can practice tidying and transformations as described below.
+
+#### Exihibit of the script used to create table using mysql
+```{ }
+/*
+tidydata tables
+
+DROP TABLE IF EXISTS tidydata;
+
+# Create new table
+CREATE TABLE tidydata 			
+(
+  airline 			varchar(20) ,  
+  status 			varchar(20) NOT NULL,  
+  LosAngeles		integer NOT NULL,
+  Phoenix			integer NOT NULL,
+  SanDiego			integer NOT NULL,
+  SanFrancisco		integer NOT NULL,
+  Seattle			integer NOT NULL
+);
+
+insert into tidydata values ("Alaska", "on time", 497, 221, 212, 503, 1841);
+insert into tidydata values ("Alaska", "delayed", 62, 12, 20, 102, 305);
+insert into tidydata values ("AM West", "on time", 694, 4840, 383, 320, 201);
+insert into tidydata values ("AM West", "delayed", 117, 415, 65, 129, 61) ;
+*/
+```
+
+
+###(a) create dbConnect
+```{r}
+##
+# Create a database connection
+##
+
+mydb = dbConnect(MySQL(), user='root', password='mysql57', host='localhost', dbname="tb")
+
+```
+
+
+###(b) select data fron tidydata
+```{r}
+##
+# Create a Database connection
+##
+
+untidywidedata <- fetch(dbSendQuery(mydb, "select * from tidydata;"))
+head(untidywidedata)
+
+```
+#### The above shows data in the wide format
+
+
+### STEP 3 : Transform Data
+##### Use **gather()** and **spread()** to tidy and transform your data
+```{r}
+##
+# Use gather() to gather all the city names
+##
+tidylongdata <- gather(untidywidedata, city, flights, 3:7)
+(tidylongdata)
+
+
+##
+# Use spread() to spread the data based on flight status
+##
+tidydata <- spread(tidylongdata, status, flights)
+head(tidydata)
+tidydata
+
+```
+
+
+### STEP 4 : Perform Analysis
+
+##### Perform analysis
+##### Use **group_by()** to group by different criteria
+##### Use **summarise()** to summarise 
+##### Use **mutate()** to mutate and percentage column
+##### Use **innerjoin()** to join dataframe based on key 
+
+```{r}
+##
+# Group by airline and summarize and then mutate 
+##
+airline_flights <- group_by(tidydata, airline) %>% 
+    summarise(total_delay=sum(delayed), total_ontime=sum(`on time`), total=sum(delayed+`on time`))
+
+head(airline_flights)
+
+summary_by_airline <- group_by(tidydata, airline) %>% 
+    summarise(avg_delay = mean(delayed), avg_on_time = mean(`on time`)) %>% 
+    mutate(percent_delay=100*(avg_delay/(avg_delay+avg_on_time))) 
+
+summary_by_airline <- inner_join(summary_by_airline, airline_flights, by="airline")
+kable(summary_by_airline)
+
+```
+
+```{r}
+##
+# Group by city and summarize and then mutate 
+##
+summary_by_city <- group_by(tidydata, city) %>% 
+    summarise(avg_delay = mean(delayed), avg_on_time = mean(`on time`)) %>% 
+    mutate(percent_delay=100*(avg_delay/(avg_delay+avg_on_time)))
+
+
+kable(summary_by_city)
+```
+
+### STEP 5 : Create Visualizations
+##### Create visualization like box plot, scatterplot
+##### 5.1 Boxplot to see total delays by airline
+```{r}
+##
+# Total Delays by Airline
+##
+
+ggplot(data=tidydata, aes(airline, delayed))+
+    geom_boxplot()+
+    theme_bw()+
+    labs(title="Total Delays by Airline", x="Airline Name", y="Total Delays")+
+    theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+##### This graph is misleading as it makes one believe that AM West had higher delays.  While AM West did have higher number of delays but since they had greater number of flights, the percent of delays AM West was lower than Alaska airlines. 
+
+
+##### 5.2 Scatterplot to see total delays by airline
+```{r}
+ggplot(data=summary_by_city, aes(city, percent_delay, color=city))+
+    geom_point()+
+    theme_bw()+
+    labs(title="Percent Delays by City", x="City", y="Percent Delay")+
+    theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+
+### STEP 5: Analysis
+
+####Summary of Findings
+#####1. As seen in summary_by_airline$percent_delay that Alaska airline had 13.27% delays while AM West had 10.89% delays. AM West seems to have slightly higher on time performance.
+#####2. Total number of flights flown by Alaska were 3775 while AM West had 7225 flights
+#####3. As presented by dataframe summary_by_city, City of Pheonix had only 7.78% delays (lowest) while San Francisco had 21.9% delays (highest)
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

@@ -1,0 +1,239 @@
+---
+title: "RK_607_Project02-03"
+author: "Raj Kumar"
+date: "March 13th, 2018"
+output:
+  html_document:
+    css: ./lab.css
+    highlight: pygments
+    theme: cerulean
+  pdf_document: default
+---
+
+<div class="jumbotron">
+  <h2 class="display-4">Yoga Searches on Google</h2>
+  <p class="lead">
+  Monthly yoga searches by state: 2004 to 2016 Yearly yoga searches by state: 2004 to 2016<br>
+  
+  ![Yoga Queries on Google](C:\\CUNY\\607Data\\Assignments\\project02\\GoogleYogaQuery.JPG)
+  
+  The next set of data comes from google http://googletrends.github.io/data/. <br>
+  Google has summarized data from year 2004-2016 which provides summary of how many times term Yoga was searched in google and also by the state these searches happened. The data set returned 149 rows, but has 52 variables. 50 states are represented as variables. It would be fun to clean and analyse this data.
+  
+  Readme: https://data.world/dotslashmaggie/google-trends-yoga/workspace/project-summary
+  
+</p>
+
+</div>
+  <hr class="my-4">
+
+<div class="minitron">
+  <h3 class="display-4">My Planned Analysis</h2>
+  <p>
+    1. I plan to cleanup the data to analyse where in United stated Yoga was most popular<br>
+    2. I also plan to analyse yearly summaries of yoga searches<br>
+    3. I also plan to analyse/plot the data based on State and year to see if there are any trends<br>
+  </p>
+</div>
+
+
+### INDEX (Step by Step)
+#####    STEP 1. Load Libraries
+#####    STEP 2. Load the file
+#####    STEP 3a. Use Dplyr to convert the data in long format 
+#####    STEP 3b. Use REGEX to cleanup the data 
+#####    STEP 3c. Use Dplyr group_by and Summarise to summarise the values
+#####    STEP 4a. Analysis 1: Analyse popularity trends of yoga by the year
+#####    STEP 4b. Analysis 2: Analyse popularity trends of yoga by the state
+#####    STEP 4c. Analysis 3: Analyse popularity trends of yoga by the state and Year
+#####    STEP 5. Conclusion
+
+
+
+## STEP 1 : Load your libraries
+```{r}
+# Load the libraries
+library(tidyverse)  #For Tidyverse
+library(RCurl)      #For File Operations
+library(dplyr)      #For Manipulating the data frames
+library(DT)         #For Data table package
+library(ggplot2)    #For Visualizations
+
+```
+
+## STEP 2 : Load the File
+```{r}
+# Good Practise: Basic house keeping: cleanup the env before you start new work
+rm(list=ls())
+
+# Garbage collector to free the memory
+gc()
+
+# Good Practise: Set up the Working Directory when working with a file system
+setwd("C:\\CUNY\\607Data\\Assignments\\project02")
+
+# Read the File directly from Github
+untidy_data <- read.csv("20160502_YogaByStateMonth.csv", header = TRUE, sep = ",")
+nrow(untidy_data)
+
+# remove the row with comments in there
+untidy_data <- untidy_data[2:149,]
+
+# check the dimenstions
+dim(untidy_data)
+
+# check the rows to ensure validity of data
+head(untidy_data,2)
+
+```
+
+#####As we can see that the data has 149 observations and 52 variables, it is in a wide format. We need to convert this to the long format.  
+##### The values show search per month for yoga and it has been indexed to 100, where 100 is the highest value.
+
+
+
+
+###    STEP 3a. Use Dplyr to convert the data in long format 
+
+```{r}
+
+names(untidy_data)
+##
+# Create a long format 
+##
+yoga_tidy <- untidy_data %>% 
+    gather(State, Value, 2:52) %>% 
+    filter(!is.na(Value)) 
+
+
+
+```
+
+
+###    STEP 3b. Use REGEX to cleanup the data 
+```{r}
+##
+# Cleanup the names of the State using REGEx
+##
+yoga_tidy$State <- unlist(str_extract_all(yoga_tidy$State, ".+\\.\\.{1}")) 
+yoga_tidy$State <- gsub("\\.\\.",'',yoga_tidy$State)
+yoga_tidy$State <- gsub("\\.",' ' ,yoga_tidy$State)    
+head(yoga_tidy)
+
+
+
+```
+
+
+
+###    STEP 4a. Analysis 1: Analyse popularity trends of yoga by the year
+
+```{r}
+##
+# Seperate the year and month so the we can process it better
+##
+yoga_tidy_date <- separate(yoga_tidy, X, c("Year", "Month"), sep="-")
+
+
+# Summarise by year
+yoga_tidy_by_year <- yoga_tidy_date %>% 
+    group_by(Year) %>% 
+    summarise("Total_Interest" = mean(Value))
+
+ggplot(yoga_tidy_by_year, aes(x=Year, y=Total_Interest, fill=Total_Interest)) +
+  geom_bar(stat = "identity") +
+  xlab("Year") + ylab("Mean of the Indexed Google Searches by Year") +
+  ggtitle("Interest in Yoga by State from 2004-2016") +
+  theme(plot.title = element_text(lineheight = .8, face = "bold")) +
+  theme(axis.text.x = element_text(angle = 60, vjust = .5, size = 9)) +
+  theme_bw()
+
+
+
+
+```
+
+###    STEP 4b. Analysis 2: Analyse popularity trends of yoga by the state
+
+
+```{r}
+# Summarise by state
+yoga_tidy_by_state <- yoga_tidy_date %>% 
+    group_by(State) %>% 
+    summarise("Total_Interest" = mean(Value)) %>% 
+    arrange(desc(`Total_Interest`))
+
+ggplot(yoga_tidy_by_state, aes(x=State, y=Total_Interest, fill=Total_Interest, label=Total_Interest)) +
+  geom_bar(stat = "identity") +
+  xlab("US State") + ylab("Mean of the Indexed Google Searches by State") +
+  ggtitle("Interest in Yoga by State from 2004-2016") +
+  theme(plot.title = element_text(lineheight = .8, face = "bold")) +
+  theme(axis.text.x = element_text(angle = 60, vjust = .5, size = 9)) +
+  theme_bw()+
+    coord_flip()
+
+
+
+```
+
+###    STEP 4c. Analysis 3: Analyse popularity trends of yoga by the state and Year
+
+
+```{r}
+# Summarise by state and Year
+yoga_tidy_by_state_Year <- yoga_tidy_date %>% 
+    group_by(State, Year) %>% 
+    summarise("Total_Interest" = mean(Value)) %>% 
+    arrange(desc(`Total_Interest`))
+
+head(yoga_tidy_by_state_Year)
+
+ggplot(yoga_tidy_by_state_Year, aes(x = as.numeric(Year) , y = as.numeric(Total_Interest), group = State, colour = State)) +
+  geom_line() +
+  geom_point() +
+  scale_y_continuous() +
+  scale_x_continuous(limits = c(2004, 2016)) +
+  theme_bw() +
+  ylab("Mean Interest") +
+  xlab("Year") +
+  ggtitle("Interest in Yoga by state") +
+  ylab("Mean Interest") +
+  theme(plot.title = element_text(lineheight = .8))
+
+```
+
+#### Create Data tables for these tidy dataframes
+```{r}
+
+# Datatable : Yoga by state and Year
+datatable(yoga_tidy_by_state_Year, options = list(filter = FALSE),filter="top")
+
+```
+
+
+### STEP 5: Conclusion
+<div class="minitron">
+  <h3 class="display-4">Conclusion</h3>
+  <p class="lead">
+    1. We saw in 4a, how the interest in yoga came down around 2009 but since then is on rise
+</p>
+  <hr class="my-4">
+  <p>
+    2. We saw in 4b, Vermont was the state with highest amount of interest in Yoga. Alabama had the lowest amount of mean interest in Yoga.
+</p>
+  <hr class="my-4">
+  <p>
+    3. We saw in 4c, shows how the interest in yoga had spike in Vermont (I wonder why) while in all other states the intest was either steady or had slight rise.
+  </p>
+  <hr class="my-4">
+</div>
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

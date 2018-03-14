@@ -1,0 +1,254 @@
+---
+title: "RK_607_Project02-02"
+author: "Raj Kumar"
+date: "March 13th, 2018"
+output:
+  html_document:
+    css: ./lab.css
+    highlight: pygments
+    theme: cerulean
+  pdf_document: default
+---
+
+<div class="jumbotron">
+  <h2 class="display-4">Marriage Rates</h2>
+  <p class="lead">
+  I selected the next data set as it was part of fivethirtyeight data set and was very interesting as it involved data on marriage rates. This wide data is across many cross sections like educational background, Race, Geographic Region, Employment backgrounds etc.
+  
+  Readme: https://github.com/fivethirtyeight/data/tree/master/marriage
+  
+</p>
+<p>
+  I thought it would be fun to play with this data to understand and analyse how the marriage rates vary across some of these cross sections for people of ages 25-34.
+</p>
+</div>
+  <hr class="my-4">
+
+<div class="minitron">
+  <h3 class="display-4">My Hypothesis</h2>
+  <p>My Hypothesis (before starting the project):  
+  1. Marriage rates have fallen with time. People are more independent now compared to in past<br>
+  2. Marriage rates might be lower for people with higher educational backgrounds as I think they spend more time in attaining education and are more independent<br>
+  3. Marriage rates might be lower in people of color<br>
+  4. Marriage rates might be higher in people who are high income vs people who are low income. Let's see...<br>
+  </p>
+</div>
+
+
+### INDEX (Step by Step)
+#####    STEP 1. Load Libraries
+#####    STEP 2. Load the file
+#####    STEP 3. Use Dplyr to convert the data in long format 
+#####    STEP 4a. Analysis 1: How have marriage rates done with time
+#####    STEP 4b. Analysis 2: How have marriage rates done based on education background by time
+#####    STEP 4c. Analysis 3: How have marriage rates done for people of color by time 
+#####    STEP 4d. Analysis 4: How have marriage rates done for people who are high income  vs. low income 
+#####    STEP 5. Conclusion
+
+
+
+## STEP 1 : Load your libraries
+```{r}
+# Load the libraries
+library(tidyverse)  #For Tidyverse
+library(RCurl)      #For File Operations
+library(dplyr)      #For Manipulating the data frames
+library(DT)         #For Data table package
+library(ggplot2)    #For Visualizations
+
+```
+
+## STEP 2 : Load the File
+```{r}
+# Good Practise: Basic house keeping: cleanup the env before you start new work
+rm(list=ls())
+
+# Garbage collector to free the memory
+gc()
+
+# Good Practise: Set up the Working Directory when working with a file system
+setwd("C:\\CUNY\\607Data\\Assignments\\project02")
+
+# Read the File directly from Github
+#fileURL <- "https://raw.githubusercontent.com/fivethirtyeight/data/master/marriage/both_sexes.csv"
+#untidy_data <- read.csv(text = getURL(fileURL), header = TRUE, sep = ",")
+untidy_data <- read.csv("both_sexes.csv", header = TRUE, sep = ",")
+
+
+# check the dimenstions
+dim(untidy_data)
+
+# Structure of the data frame
+head(untidy_data,1)
+
+# Names of the variables
+names(untidy_data) 
+
+```
+
+#####As we can see that the data has 75 variables and only 17 observations, it is in a wide format. We need to convert this to the long format.  
+
+
+
+###    STEP 3. Use Dplyr to convert the data in long format 
+
+```{r}
+
+# Create dataframe with rates
+# Create focus group of people between ages 25-34
+age2534 <- untidy_data %>% select(1:21)
+
+head(age2534, 1)
+
+# Fix the Column names to more readable names 
+names(age2534) <- c("x", "Year", "Date", "All", "High School", "Some College", "Bachelor Degree Plus", "Bachelor Degree", "Graduate Degree", "White", "Black", "Hispanic", "New England", "Mid Atlantic", "Mid West", "South", "Mountain", "Pacific", "Low Income", "Middle Class", "Rich")
+
+##
+# Create a long format overall data for age 25-34
+##
+
+head(age2534)
+
+age2534_tidy <- age2534 %>% 
+    gather(Category, Single, 4:21) %>% 
+    filter(!is.na(Single)) %>% 
+    mutate(Year = as.numeric(Year), Married=1-Single)  %>% 
+    mutate(Single=format(Single, digits=2, nsmall=2),
+           Married=format(Married, digits=2, nsmall=2))
+
+
+
+```
+
+#### Create Data tables for these tidy dataframes
+```{r}
+
+# Datatable for people based on their education background
+datatable(age2534_tidy)
+
+```
+
+
+###    STEP 4a. Analysis 1: How have marriage rates done with time
+
+```{r}
+
+allpeople <- age2534_tidy %>% filter(Category=="All")
+
+ggplot(allpeople, aes(Year, as.numeric(Married), group=1)) +
+  geom_line(color="red") +
+  geom_point(color="blue") +
+  expand_limits(y=.5) +
+  scale_x_continuous(limits = c(1960, 2013)) +
+  theme_bw() +
+  ggtitle("Declining Marriage Rates in All People of Ages 25-34") +
+  ylab("Marriage Rate") +
+  xlab("Year") +
+  theme(plot.title = element_text(lineheight = .8))
+
+```
+
+
+###    STEP 4b. Analysis 2: How have marriage rates done based on education background by time
+
+```{r}
+people_by_edu <- age2534_tidy %>% filter(Category %in% c("High School", 
+                                                            "Some College", 
+                                                            "Bachelor Degree Plus", 
+                                                            "Bachelor Degree", 
+                                                            "Graduate Degree"))
+
+
+ggplot(people_by_edu, aes(x = as.numeric(Year) , y = as.numeric(Married), group = Category, colour = Category)) +
+  geom_line() +
+  geom_point() +
+  scale_y_continuous() +
+  scale_x_continuous(limits = c(1960, 2013)) +
+  theme_bw() +
+  ylab("Marriage Rate") +
+  xlab("Year") +
+  ggtitle("Declining Marriage Rates by Educational Background \nin People Ages 25-34") +
+  ylab("Marriage Rate") +
+  theme(plot.title = element_text(lineheight = .8))
+
+```
+
+
+###    STEP 4c. Analysis 3: How have marriage rates done for people of color by time 
+
+```{r}
+
+people_by_race <- age2534_tidy %>% filter(Category %in% c("Black", 
+                                                            "White", 
+                                                            "Hispanic"))
+
+
+ggplot(people_by_race, aes(x = as.numeric(Year) , y = as.numeric(Married), group = Category, colour = Category)) +
+  geom_line() +
+  geom_point() +
+  scale_y_continuous() +
+  scale_x_continuous(limits = c(1960, 2013)) +
+  theme_bw() +
+  ylab("Marriage Rate") +
+  xlab("Year") +
+  ggtitle("Declining Marriage Rates by Demographics \nin People Ages 25-34") +
+  ylab("Marriage Rate") +
+  theme(plot.title = element_text(lineheight = .8))
+
+```
+
+
+###    STEP 4d. Analysis 4: How have marriage rates done for people who are high income  vs. low income  
+```{r}
+
+unique(age2534_tidy$Category)
+people_by_income <- age2534_tidy %>% 
+    filter(Category %in% c("Low Income", 
+                                                            "Middle Class", 
+                                                            "Rich")) 
+
+
+
+ggplot(people_by_income, aes(x = as.numeric(Year) , y = as.numeric(Married), group = Category, colour = Category)) +
+  geom_line() +
+  geom_point() +
+  scale_y_continuous() +
+  scale_x_continuous(limits = c(1960, 2013)) +
+  theme_bw() +
+  ylab("Marriage Rate") +
+  xlab("Year") +
+  ggtitle("Declining Marriage Rates by Income \nin People Ages 25-34") +
+  ylab("Marriage Rate") +
+  theme(plot.title = element_text(lineheight = .8))
+
+```
+
+### STEP 5: Conclusion
+<div class="minitron">
+  <h3 class="display-4">Conclusion</h3>
+  <p class="lead">
+    1. We saw in 4a, how the marriage rates have falled nearly every year since 1960. But the surprise was the more steeper decline from year 2000 onwards
+</p>
+  <hr class="my-4">
+  <p>
+    2. We saw in 4b, that my hypothesis that higher educated people might have lower marriage rates was **wrong**. What surprised me was that how in 1960 people with just High School had the highest married rate, but since then this exact group has had the greatest decline in the marraige rates. People with graduate degree seemed to have the lowest level of decline.
+</p>
+  <hr class="my-4">
+  <p>
+    3. We saw in 4c, that my hypothsis for marriage rates amoung people of color was correct. What disturbed me was that marriage rates among African American were mere 30%!! 
+  </p>
+  <hr class="my-4">
+  <p>
+    4. We saw in 4d, that my hypothsis for marriage rates amoung people of various income levels was partially correct. Middle class seems to have done the best to preserve the sanctity of a marriage. Again, it was disturbing to see how the steep decline in the Low Income group.  
+  </p>
+</div>
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

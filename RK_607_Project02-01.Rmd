@@ -1,0 +1,287 @@
+---
+title: "RK_607_Project02-01"
+author: "Raj Kumar"
+date: "March 10th, 2018"
+output:
+  html_document:
+    css: ./lab.css
+    highlight: pygments
+    theme: cerulean
+  pdf_document: default
+---
+
+<div class="jumbotron">
+  <h2 class="display-4">Child Mortality</h2>
+  <p class="lead">
+  **My Inspiration:** In my part time, I work for a volunteer organization which works tirelessly toward upliftment of Women and Children in under-developed countries. I have been involved in many projects from building schools to building modern medical facilities which provide equal access for children and women for all economic backgrounds. Sadly even in 21st century, Child Mortality remains high due to lack of basic care for children under age of 5. In this analysis I would like to review the data on child mortality.
+</p>
+<p> 
+  Childmortality.org is an organization that publishes Child Mortality estimates for all the countries around the world. 
+</p>
+<p>
+They provide all available data and the latest child mortality estimates for each country based on the research of the UN Inter-agency Group for Child Mortality Estimation. 
+</p>
+<p>
+While doing the research for this discussion topic, I was looking at their Estimates for under-five, infant and neonatal mortality and noticed that data is in wide format and contains six variables with values of interest. 
+</p>
+  <hr class="my-4">
+  <p>My Hypothesis: 
+    1. I believe that due to advent of modern medicine, the infant mortality rates should be decreasing in the years
+    2. I also believe that the nations with worst rates would belong to the developing world
+    3. I think larger nations should have greater total deaths 
+    </p>
+</div>
+
+
+### INDEX (Step by Step)
+#####    STEP 1. Load Libraries
+#####    STEP 2. Load the file
+#####    STEP 3. Analysis by Data Munging: from Wide to Long Format 
+#####    STEP 4. Conclusion
+#####    STEP 5. Plot the data
+
+
+
+## STEP 1 : Load your libraries
+```{r}
+# Load the libraries
+library(tidyverse)  #For Tidyverse
+library(RCurl)      #For File Operations
+library(dplyr)      #For Manipulating the data frames
+library(DT)         #For Data table package
+library(ggplot2)    #For Visualizations
+library(rworldmap)
+
+```
+
+## STEP 2 : Load the File
+```{r}
+# Good Practise: Basic house keeping: cleanup the env before you start new work
+rm(list=ls())
+
+# Garbage collector to free the memory
+gc()
+
+# Good Practise: Set the graphics drivers 
+dev.off()
+
+# Good Practise: Set up the Working Directory when working with a file system
+setwd("C:\\CUNY\\607Data\\Assignments\\project02")
+
+# Read the File
+untidy_data <- read.csv("Data02_01_UNIGME_Rates_Deaths_Under5.csv")
+
+
+# check the dimenstions
+dim(untidy_data)
+
+# Structure of the data frame
+#str(untidy_data)
+
+# Names of the variables
+names(untidy_data) 
+
+```
+
+<div class="jumbotron">
+  <p class="lead">
+  **Analysis 1:** As we can see that the data has 405 variables and only 585 observations, it is in a wide format.   </p>
+ <hr class="my-4">
+  **U5MR:** Under 5 mortality Rate has country wide data from year 1950 to 2016 <br>
+  **IMR:** Infant Mortality Rate has country wide data from year 1950 to 2016 <br>
+  **NMR:** Neo Natal Mortality Rate has country wide data from year 1950 to 2016 <br>
+  **Under.five.Deaths:** Total Under 5 Mortality Rate by country from year 1950 to 2016 <br>
+  **Infant.Deaths:** Total Infant Deaths by country from year 1950 to 2016 <br>
+  **Neonatal.Deaths:** Neo Natal Deaths by country from year 1950 to 2016 <br>
+</div>
+
+
+#### DPLYR: Using DPlyr to convert data from wide to long format 
+<p>
+#### We see above that the year field has year values in format U5MR.1951. We need to fix it to get the year correctly.
+</p>
+
+```{r}
+
+# Create dataframe with rates
+all_rates_long <- untidy_data %>% 
+    select(1:204) %>% 
+    gather(category, rate, 4:204) %>% 
+    mutate(year = as.numeric(str_extract(category, "\\d{4}")), 
+           category = str_sub(category,1,-6)) %>% 
+    rename(country = CountryName, bounds=Uncertainty.bounds)
+    
+
+# Create dataframe with values
+all_values_long <- untidy_data %>% select(1:3,205:405) %>% 
+    gather(category, value, 4:204) %>% 
+    mutate(year = as.numeric(str_extract(category, "\\d{4}")), 
+           category = str_sub(category,1,-6)) %>% 
+    rename(country = CountryName, bounds=Uncertainty.bounds)
+
+
+# Spread the rate data based on the category field
+all_rates_tidy <- all_rates_long %>% 
+    filter(!is.na(rate)) %>% 
+    spread(category, rate) 
+
+all_values_tidy <- all_values_long %>% 
+    filter(!is.na(value)) %>% 
+    spread(category, value) 
+
+```
+
+#### Create Data tables for these tidy dataframes
+```{r}
+
+# Rates Dataframe
+datatable(all_rates_tidy)
+
+```
+
+```{r}
+# Values Dataframes
+datatable(all_values_tidy)
+
+```
+
+
+#### Analysis 1: For year 2016, Which 100 countries had the highest Mortality Rates 
+```{r}
+# Worst countries for U5MR
+country2016df <- all_rates_tidy %>% 
+    filter(year==2016 & 
+               bounds=="Median") %>% 
+    arrange(desc(U5MR)) %>% 
+    slice(1:100)    
+
+barplotCountryData(country2016df,'U5MR','country',scaleSameInPanels = TRUE, color=country,numPanels = 5,cex = .9,main='Under 5 Mortality Rates by Country for Year 2016')
+
+
+# Worst countries for IMR
+country2016df <- all_rates_tidy %>% 
+    filter(year==2016 & 
+               bounds=="Median") %>% 
+    arrange(desc(IMR)) %>% 
+    slice(1:100)    
+barplotCountryData(country2016df,'IMR','country',scaleSameInPanels = TRUE, color=country,numPanels = 5,cex = .9,main='Infant Mortality Rates by Country for Year 2016')
+
+
+# Worst countries for NMR
+country2016df <- all_rates_tidy %>% 
+    filter(year==2016 & 
+               bounds=="Median") %>% 
+    arrange(desc(NMR)) %>% 
+    slice(1:100)    
+
+barplotCountryData(country2016df,'NMR','country',scaleSameInPanels = TRUE, color=country,numPanels = 5,cex = .9,main='Under 5 Mortality Rates by Country for Year 2016')
+
+```
+<p>
+Based on above analysis 
+<ul> **Somalia** was the worst Under 5 Mortality Rate
+<ul> **Centra African Republic** was the worst Under Infant  Mortality Rate
+<Ul> **Pakistan** was the worst Neonatal Mortality Rate<br><br>
+#####This Proves my Hypothesis#2 that mostly countries of developing world have high child mortality rates
+</p>
+
+
+#### Analysis 2: How have the worst 25 countries done in term of Mortality Rates by the year 
+```{r}
+
+#find 25 top countries with highest mortality
+worstcountrytop25 <- all_rates_tidy %>% 
+    arrange(desc(U5MR)) %>% 
+    select(country, bounds, U5MR, year) %>% 
+    filter(year==2016 & 
+               bounds=="Median") %>% 
+    slice(1:25) %>% 
+    select(country)
+
+head(worstcountrytop25)
+
+# Now find the rates of these worst countries 
+U5MR_rates_tidy_selected <- all_rates_tidy %>% 
+    filter(bounds=="Median"&
+               country %in% worstcountrytop25$country)
+head(U5MR_rates_tidy_selected)
+
+U5MR_rates_tidy_selected$U5MR <- as.numeric(as.character(U5MR_rates_tidy_selected$U5MR))
+
+
+ggplot(U5MR_rates_tidy_selected, aes(x = year, y = U5MR, color = country)) +
+#  geom_line() +
+    geom_point() +
+  scale_y_continuous() +
+  scale_x_continuous(breaks = seq(1950, 2016, by = 5)) + 
+#  scale_x_continuous(limits = c(1950, 2016)) +
+  theme_linedraw() +
+  ggtitle("Under 5 Mortality Rate By Country and Year") +
+  xlab("Year") +
+  ylab("Mortality Rate") +
+  theme(plot.title = element_text(lineheight = .8, face = "bold"))
+
+
+```
+<p>
+#####This GGPlot proves my hypothesis #1 that mortality rates have come down with time
+</p>
+
+
+#### use the rmapworld library to create a world map with rates data
+```{r}
+U5MR_rates_tidy_selected_2016  <-   all_rates_tidy %>% 
+    filter(year==2016 & bounds=="Median") %>% 
+    select(ISO.Code, U5MR)
+dim(U5MR_rates_tidy_selected_2016)
+
+countryjoin <- joinCountryData2Map( U5MR_rates_tidy_selected_2016,joinCode = "ISO3", nameJoinColumn = "ISO.Code")
+
+library(RColorBrewer)
+par(mai=c(0,0,0.4,0),xaxs="i",yaxs="i")
+palette <-brewer.pal(7,'OrRd') 
+mapParams <- mapCountryData(countryjoin,
+                            nameColumnToPlot='U5MR',
+                             colourPalette=palette,
+                            missingCountryCol = 'gray', 
+                            addLegend ='FALSE',
+                            oceanCol = 'lightblue',
+                            mapTitle = "Infant Mortality Rate Per 1000 \nfor Year: 2016")
+
+do.call( addMapLegend, c( mapParams, 
+                          legendLabels = "all", 
+                        legendShrink=.45,
+                        labelFontSize=.8, 
+                          legendWidth = .5 ))
+
+
+
+```
+
+#### Analysis 3: Total Death of Infants by the country and year
+```{r}
+
+# Use Group By and summarise the data by countries
+country_total_death <- all_values_tidy %>% 
+    group_by(country, year) %>% 
+    summarise(total_deaths = sum(Infant.Deaths+Neonatal.Deaths+Under.five.Deaths, na.rm=TRUE)) %>% 
+    summarise(total_deaths = sum(total_deaths)) %>% arrange(desc(total_deaths)) 
+
+```
+<p>
+##### Hythesis# 3: This tables in interesting as it shows how India has the highest total number of death, which was bit expected as India is the second highest population in the world. But the rest of the countries are not in the top 5 populous countries, which shows how these countries had very high rates of child deaths. China shows up at #6 in this list as expected.
+</p>
+
+
+```{r}
+datatable(country_total_death)
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

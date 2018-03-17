@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <fav_books>
 	<book>
 		<name>As a Man Thinketh</name>
@@ -13,8 +14,10 @@
 	</book>
 	<book>
 		<name>Jonathan Livingston Seagull: The Complete Edition</name>
-		<author>Richard Bach</author>
-		<author>Russell Munson</author>
+		<author>
+		<first>Richard Bach</first>
+		<second>Russell Munson</second>
+		</author>
 		<publisher>Scribner</publisher>
 		<year>2014</year>
 	</book>

@@ -29,7 +29,8 @@ Your deliverable is the three source files and the R code. If you can, package y
 #####    STEP 3. Create HTML Table 
 #####    STEP 4. Create XML Table
 #####    STEP 5. Create JSON Table
-#####    STEP 5. Conclusion
+#####    STEP 6. Compare the dataframes
+#####    STEP 7. Conclusion
 
 
 ## STEP 0 : Good Practise
@@ -128,7 +129,17 @@ names(json.book) <- c("Book", "Author", "Publisher", "Year")
 datatable(json.book)
 ```
 
-###    STEP 6. Conclusion
+
+###    STEP 6. Compare the data frames
+```{r}
+library(diffobj)
+diffObj(html.book, xml.book)
+diffObj(xml.book, json.book)
+diffObj(json.book, html.book)
+```
+
+
+###    STEP 7. Conclusion
 
 <div class="minitron">
   <p class="lead">**Conclusion - Differences** </p>

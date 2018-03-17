@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<fav_books>
+<books>
 	<book>
 		<name>As a Man Thinketh</name>
 		<author>James Alen</author>
@@ -27,4 +27,4 @@
 		<publisher>HarperOne</publisher>
 		<year>2014</year>
 	</book>
-</fav_books>
+</books>

@@ -144,6 +144,10 @@ diffObj(json.book, html.book)
 <div class="minitron">
   <p class="lead">**Conclusion - Differences** </p>
   <p>
+    1. **Overall:**  We can see mostly the dataframes were similar except the XML added 2 elements together causing a difference. Also Json added .id field which was removed. 
+  </p>
+  <hr class="my-4">
+  <p>
     1. **HTML Table:**  readHTMLTable returns a list and it needs to be converted to data frame. Converting to dataframe added NULL to the column names, which had to be cleaned. 
   </p>
   <hr class="my-4">

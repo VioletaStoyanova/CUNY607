@@ -1,0 +1,156 @@
+---
+title: "RK_607_Assignment07"
+author: "Raj Kumar"
+date: "March 17th, 2018"
+output:
+  html_document:
+    css: ./lab.css
+    highlight: pygments
+    theme: cerulean
+  pdf_document: default
+---
+
+<div class="jumbotron">
+  <h2 class="display-4">Working with XML and JSON in R</h2>
+  <p class="lead">
+Pick three of your favorite books on one of your favorite subjects. At least one of the books should have more than one author. For each book, include the title, authors, and two or three other attributes that you find interesting.
+Take the information that you've selected about these three books, and separately create three files which store the book's information in HTML (using an html table), XML, and JSON formats (e.g. "books.html", "books.xml", and "books.json"). To help you better understand the different file structures, I'd prefer that you create each of these files "by hand" unless you're already very comfortable with the file formats.
+Write R code, using your packages of choice, to load the information from each of the three sources into separate R data frames. Are the three data frames identical?
+Your deliverable is the three source files and the R code. If you can, package your assignment solution up into an .Rmd file and publish to rpubs.com. [This will also require finding a way to make your three text files accessible from the web]
+
+</p>
+  <hr class="my-4">
+</div>
+
+
+### INDEX (Step by Step)
+#####    STEP 1. Load Libraries
+#####    STEP 2. Load the file
+#####    STEP 3. Create HTML Table 
+#####    STEP 4. Create XML Table
+#####    STEP 5. Create JSON Table
+#####    STEP 5. Conclusion
+
+
+## STEP 0 : Good Practise
+```{r echo=FALSE}
+# Good Practise: Basic house keeping: cleanup the env before you start new work
+rm(list=ls())
+
+# Garbage collector to free the memory
+gc()
+```
+
+
+## STEP 1 : Load your libraries
+```{r}
+# Load the libraries
+library(RCurl)      #For File Operations
+library(XML)        #For XML Operations
+library(jsonlite)   #For JSon operations
+library(rjson)      #For JSon Operations - This one did not work well
+library(DT)         #For Data table package
+library(plyr)       #For lplyr operation
+
+```
+
+
+## STEP 2 : Load the File
+```{r}
+# Good Practise: Set up the Working Directory when working with a file system
+setwd("C:\\CUNY\\607Data\\Assignments")
+
+# Set the File URL
+html.url <- "https://raw.githubusercontent.com/rajk11040/CUNY607/master/07assignment_favbooks.html"
+
+xml.url <- "https://raw.githubusercontent.com/rajk11040/CUNY607/master/07assignment_favbooks.xml"
+
+json.url <- "https://raw.githubusercontent.com/rajk11040/CUNY607/master/07assignment_favbooks.json"
+
+
+```
+
+###    STEP 3. Create HTML Table 
+
+
+1.   
+<div class="minitron">
+  <p class="lead">**HTML Table** Create a HTML Table.   </p>
+</div>
+
+```{r}
+# Read the File
+html.book <- getURL(html.url)
+html.book <- readHTMLTable(html.book, header = TRUE)
+html.book <- data.frame(html.book)
+names(html.book)
+names(html.book) <- c("Book", "Author", "Publisher", "Year")
+
+datatable(html.book)
+```
+
+###    STEP 4. Create XML Table
+
+2. 
+<div class="minitron">
+  <p class="lead">**XML Table** Create a XML Table.   </p>
+</div>
+
+```{r}
+# Read the File
+xml.book <- getURL(xml.url)
+xml.book <- xmlTreeParse(xml.book, useInternal = TRUE)
+xml.book <- xmlToDataFrame(xml.book)
+names(xml.book) <- c("Book", "Author", "Publisher", "Year")
+
+datatable(xml.book)
+```
+
+
+###    STEP 5. Create JSON Table
+
+3.   
+<div class="minitron">
+  <p class="lead">**JSON Table** Create a JSON Table.   </p>
+</div>
+```{r}
+# Read the File
+json.book <- getURL(json.url)
+
+# If had issues with rjson as it did not readh the elements correctly into data.frame 
+# I switched to jsonlite as it seemed to wokr better
+json.book <- jsonlite::fromJSON(json.book)
+json.book <- ldply(json.book, data.frame)
+
+#remove the .id column
+json.book <- json.book %>% dplyr::select(2:5)
+names(json.book) <- c("Book", "Author", "Publisher", "Year")
+datatable(json.book)
+```
+
+###    STEP 6. Conclusion
+
+<div class="minitron">
+  <p class="lead">**Conclusion - Differences** </p>
+  <p>
+    1. **HTML Table:**  readHTMLTable returns a list and it needs to be converted to data frame. Converting to dataframe added NULL to the column names, which had to be cleaned. 
+  </p>
+  <hr class="my-4">
+  <p>
+    2. **XML Table:** This seemed the easiest way to handle data as XML is the best way to tag and handle data. XML does add additional size to the data as it has ending tags. This was the cleanest way to handle multiple authors, as the result dataframe combined these elements automatically. 
+  </p>
+  <hr class="my-4">
+  <p>
+    3. **JSON Table:** This is similar to XML but JSON does not have any eding tags. This has fast become a widely used way in web api's to communicate data. This did required bit more lines of code and added a .id wrapper column to data which I removed later. I also had issue with RJSON library as it did not read my files correctly.
+  </p>
+
+</div>
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

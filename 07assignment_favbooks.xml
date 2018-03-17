@@ -1,26 +1,23 @@
 <fav_books>
-    	
 	<book>
 		<name>As a Man Thinketh</name>
 		<author>James Alen</author>
 		<publisher>Value Publishing Reprints</publisher>
 		<year>2017</year>
 	</book>
-		
 	<book>
 		<name>Hope for the Flowers</name>
 		<author>Trina Paulus</author>
 		<publisher>Trina Paulus</publisher>
 		<year>1973</year>
 	</book>
-		
 	<book>
 		<name>Jonathan Livingston Seagull: The Complete Edition</name>
-		<author>Richard Bach, Russell Munson</author>
+		<author>Richard Bach</author>
+		<author>Russell Munson</author>
 		<publisher>Scribner</publisher>
 		<year>2014</year>
 	</book>
-		
 	<book>
 		<name>The Alchemist</name>
 		<author>Paulo Coelho</author>

@@ -1,0 +1,84 @@
+---
+title: "RK_607_Week09_Working_with_Web_APIs"
+author: "Raj Kumar"
+date: "March 25th, 2018"
+output:
+  html_document:
+    css: ./lab.css
+    highlight: pygments
+    theme: cerulean
+  pdf_document: default
+---
+
+<div class="jumbotron">
+  <h2 class="display-4">Web API</h2>
+  <p class="lead">
+The New York Times web site provides a rich set of APIs, as described here: http://developer.nytimes.com/docs
+You'll need to start by signing up for an API key.
+Your task is to choose one of the New York Times APIs, construct an interface in R to read in the JSON data, and transform it to an R dataframe.
+</p>
+  <hr class="my-4">
+</div>
+
+
+### INDEX (Step by Step)
+#####    STEP 1. Setup the API key
+#####    STEP 2. Load the libraries
+#####    STEP 3. Read the data
+#####    STEP 4. Convert the data into usable dataframe 
+
+
+## STEP 0 : Cleanup the Environment
+```{r echo=FALSE, message=FALSE, results=FALSE}
+# Good Practise: Basic house keeping: cleanup the env before you start new work
+rm(list=ls())
+
+# Garbage collector to free the memory
+gc()
+
+# Good Practise: Set the graphics drivers 
+dev.off()
+
+# Good Practise: Set up the Working Directory when working with a file system
+setwd("C:\\CUNY\\607Data\\Assignments")
+
+```
+
+## STEP 1 : Set up the API Keys
+New York times API can be registered to at http://developer.nytimes.com/signup
+
+
+
+
+## STEP 2 : Load your libraries
+```{r}
+# Load the libraries
+library("httr")
+library("rjson")
+library("DT")
+```
+
+
+##    STEP 3. Read the data
+```{r}
+api.key <- "0bed27e078464cd595721a8cd5243dd5"
+url <- "http://api.nytimes.com/svc/topstories/v1/home.json?api-key="
+
+result <- GET(paste(url, api.key, sep=""))
+
+```
+
+
+
+##    STEP 4. Convert the data into usable dataframe 
+```{r}
+url.content <- content(result)
+
+content.list <- fromJSON(url.content)
+content.df <- as.data.frame(do.call(rbind, content.list$results))
+colnames(content.df)
+
+datatable(content.df)
+
+```
+

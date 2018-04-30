@@ -1,6 +1,6 @@
 ---
 title: 607 Final Project Proposal
-author: "Raj Kumar"
+author: "Raj Kumar and Violeta Stoyanova"
 date: "April 28th, 2018"
 output:
   html_document:
@@ -8,270 +8,64 @@ output:
     highlight: pygments
     theme: cerulean
     toc: true # table of content true
-    toc_float: true
+    #toc_float: false
     toc_depth: 4  # upto three depths of headings (specified by #, ## and ###)
-    #number_sections: true  ## if you want number sections at each table header
     code_folding: show
     #theme: united
   pdf_document: default
 ---
+  <h2 class="display-4">Best Places to Live in the USA</h2>
+
+
+
+![](finalProject/placetolive1.jpg)
 
 <div class="jumbotron">
-  <h2 class="display-4">Final Project Proposal</h2>
+  <h2 class="display-4">Final Project Proposal - Finding an Ideal Place to Live</h2>
   <p class="lead">
 
-It can be useful to be able to classify new "test" documents using already classified "training" documents.  A common example is using a corpus of labeled spam and ham (non-spam) e-mails to predict whether or not a new document is spam.  
-For this project, you can start with a spam/ham dataset, then predict the class of new documents (either withheld from the training dataset or from another source such as your own spam folder).   One example corpus:  https://spamassassin.apache.org/publiccorpus/. 
+There is a quote, "If you want to catch a fish, you have to go where the fish are!"<br>
+In this project, We would try to find good places to live in america. The question We are asking is "What place are ideal for technology and management people with families to live?" <br></p>
+
+There is always a big demand of technology and management skills everywhere but there are lots of factors that go into making a place an ideal place. Some of the key considerations is always availability of ample work opportunities along with strong wage support. But stronger wages in some areas also come with higher cost of living (like California, Boston or NY) which can be indicated by Consumer Price Index to taxes in certain areas. Along with these, other factors like number of other families, diversity also play a big role in bring up a family. In addition to these, We also plan to search and analyze some additional parameters like availability of recreational facilities like parks in the area.
+</div>
+  <hr class="my-4">
+
+
+<div class="minitron">
+  <p class="lead">**Inspiration - Finding a Happy Place! :) ** </p>
+  <p>
+    Most people end up where they live as a result of uncontrolled events in their life like a new job. A high paying job is important but cannot be the only criteria of determining where to live. Many a times, where a person ends up might not be the best place for that person and takes a toll on his/her happiness. 
+    
+    I (Raj) myself ended up living in New York area as as result of events that occured in my life. I used to be a technology consultant travelling to various clients and having a base near major airports was very important for easier travel. NY itself provides a very stable job market but it comes at very high cost of living due to high taxes and extremely high housing cost. Though I dont travel for work anymore, I have created significant roots in NY area as I have lived here for a while.  
+    
+    But I have often wondered where would I live if I was ever offered a do-over. This project would help me do a very objective analysis and discover what an ideal place for me might look like.
   </p>
   <hr class="my-4">
 </div>
 
+<div class="minitron">
+  <p class="lead">**Possible Proposed Sources** </p>
+    1. Wage Date: https://www.bls.gov/mwe/
+    2. Consumer Price Index Data: https://www.bls.gov/cpi/
+    3. Unemployment Data: https://www.bls.gov/web/laus/laumstrk.htm
+    4. State and National Parks: https://en.wikipedia.org/wiki/Lists_of_state_parks_by_U.S._state
+    5. Census Data: https://www.census.gov/data/datasets/2017/demo/popest/nation-detail.html#ds
+    6. Average House Prices: https://www.statisticbrain.com/home-sales-average-price/
+    7. Job Search Engines: https://wwww.indeed.com
+
+  <hr class="my-4">
+
+</div>
 
-```{r echo=FALSE, message=FALSE, results=FALSE}
-# Good Practise: Basic house keeping: cleanup the env before you start new work
-rm(list=ls())
-
-# Garbage collector to free the memory
-gc()
-```
-
-
-## STEP 1 : Load your libraries
-```{r message=FALSE, results=FALSE, warning=FALSE}
-
-# Load the libraries
-
-lib.list <- c("RCurl",
-              "DT",
-              "dplyr",
-              "tidyr",
-              "wordcloud",
-              "ggplot2",
-              "data.table",
-              "RMySQL",
-              "tidyverse",
-              "stringr",
-              "ggplot2",
-              "wordcloud",
-              "tm",  #text mining https://cran.r-project.org/web/packages/tm/vignettes/tm.pdf
-              "RTextTools" 
-              )
-
-
-# Loading all libraries at once
-lapply(lib.list, require, character.only = TRUE)
-
-```
-
-
-## STEP 2 : Load the File
-```{r warning=FALSE}
-getwd()
-# Good Practise: Set up the Working Directory when working with a file system
-setwd("C://CUNY//607Data//Assignments//finalProject")
-wdir <- getwd()
-
-# Set the File URL
-if (!dir.exists("easy_ham")){
-  download.file(url = "http://spamassassin.apache.org/old/publiccorpus/20021010_easy_ham.tar.bz2",
-                destfile = "20021010_easy_ham.tar.bz2")
-    
-    untar("20021010_easy_ham.tar.bz2",compressed = "bzip2")
-}
-
-ham.files = list.files(path = "easy_ham",full.names = TRUE)
-
-if (!dir.exists("spam_2")){
-  download.file(url = "http://spamassassin.apache.org/old/publiccorpus/20050311_spam_2.tar.bz2",
-                destfile = "20050311_spam_2.tar.bz2")
-    untar("20050311_spam_2.tar.bz2", compressed = "bzip2")
-    }
-
-spam.files = list.files(path = "spam_2", full.names = TRUE)
-
-```
-
-##    STEP 3. Read all (HAM and SPAM) files into a DF 
-
-
-```{r warning=FALSE}
-
-# Read the Directory and get list of file names 
-dir <- paste(wdir,"easy_ham",sep="/")
-ham.File.Names = list.files(dir)
-ham.File.Path <- paste(dir, ham.File.Names, sep="/")
-
-ham.body.df <- c()
-
-# Read all files in a DF
-for (i in ham.File.Path){
-    #con <- file(i, open='r')
-    text <- readLines(i)
-    ham.body<- list(paste(text, collapse="\n"))
-    ham.body.df = c(ham.body.df,ham.body)
-}
-
-#  
-ham.df <- c()
-ham.df <- as.data.frame(unlist(ham.body.df))
-names(ham.df) <- c("body")
-ham.df$filename <- unlist(ham.File.Names)
-ham.df$type <- "ham"
-
-
-```
-
-
-```{r warning=FALSE}
-dir <- paste(wdir,"spam_2",sep="/")
-spam.File.Names = list.files(dir)
-spam.File.Path <- paste(dir,spam.File.Names,sep="/")
-
-
-spam.body.df <- c()
-
-# Read all files in a DF
-for (i in spam.File.Path){
-    #con <- file(i, open='r')
-    text <- readLines(i)
-    spam.body<- list(paste(text, collapse="\n"))
-    spam.body.df = c(spam.body.df,spam.body)
-}
-
-# 
-spam.df <- c()
-spam.df <- as.data.frame(unlist(spam.body.df))
-names(spam.df) <- c("body")
-spam.df$filename <- unlist(spam.File.Names)
-
-spam.df$type <- "spam"
-
-```
-
-```{r}
-spam.ham.df <- rbind(spam.df, ham.df)
-
-```
-
-
-```{r}
-
-```
-
-##    STEP 4. Cleaning the data and Text Mining
-
-
-```{r}
-# use the #tm to mine the text
-# Documentation for this can be seen at https://cran.r-project.org/web/packages/tm/vignettes/tm.pdf
-
-spam.Ham.Corpus <- VCorpus(VectorSource(spam.ham.df$body))
-
-
-clean.Email.Corpus <- tm_map(spam.Ham.Corpus, content_transformer(tolower))
-clean.Email.Corpus <- tm_map(clean.Email.Corpus, removeNumbers)
-clean.Email.Corpus <- tm_map(clean.Email.Corpus, removePunctuation)
-clean.Email.Corpus <- tm_map(clean.Email.Corpus, stripWhitespace)
-clean.Email.Corpus <- tm_map(clean.Email.Corpus, removeWords, stopwords("english"))
-#clean.Email.Corpus <- tm_map(clean.Email.Corpus, stemDocument)
-
-email.Dtm <- DocumentTermMatrix(clean.Email.Corpus)
-email.Dtm <- removeSparseTerms(email.Dtm, 1-(10/length(clean.Email.Corpus)))
-
-email.Tdm <- TermDocumentMatrix(clean.Email.Corpus)
-email.Tdm <- removeSparseTerms(email.Tdm, 1-(10/length(clean.Email.Corpus)))
-
-
-spam_indices <- which(spam.ham.df$type == "spam")
-suppressWarnings(wordcloud(clean.Email.Corpus[spam_indices], min.freq=100))
-
-ham_indices <- which(spam.ham.df$type == "ham")
-suppressWarnings(wordcloud(clean.Email.Corpus[ham_indices], min.freq=100))
-
-```
-##    STEP 5. Short Analysis of the existing data
-The above word clouds show us the various words that are predominantly present in HAM and SPAM emails.
-
-We could also use the TM package further to do some more analysis like shown below 
-```{r}
-findFreqTerms(email.Dtm, 500)
-
-```
-
-
-##    STEP 6. Create Test and Train Data
-
-```{r}
-set.seed(123)
-train.size <- floor(0.70 * nrow(spam.ham.df))
-train.size
-
-
-train.Index <- sample(seq_len(nrow(spam.ham.df)), size = train.size)
-
-train.Spam.Ham <- spam.ham.df[train.Index, ]
-test.Spam.Ham <- spam.ham.df[-train.Index, ]
-
-# count of spam and ham in train data set
-spam<-subset(train.Spam.Ham,train.Spam.Ham$type == "spam")
-ham<-subset(train.Spam.Ham,train.Spam.Ham$type == "ham")
-
-
-# Create corpus for training and test data
-train.Email.Corpus <- Corpus(VectorSource(train.Spam.Ham$body))
-test.Email.Corpus <- Corpus(VectorSource(test.Spam.Ham$body))
-
-train.Clean.Corpus <- tm_map(train.Email.Corpus ,removeNumbers)
-train.Clean.Corpus <- tm_map(train.Clean.Corpus, removePunctuation)
-train.Clean.Corpus <- tm_map(train.Clean.Corpus, removeWords, stopwords())
-train.Clean.Corpus<- tm_map(train.Clean.Corpus, stripWhitespace)
-
-test.Clean.Corpus <- tm_map(test.Email.Corpus, removeNumbers)
-test.Clean.Corpus <- tm_map(test.Clean.Corpus, removePunctuation)
-test.Clean.Corpus  <- tm_map(test.Clean.Corpus, removeWords, stopwords())
-test.Clean.Corpus<- tm_map(test.Clean.Corpus, stripWhitespace)
-
-train_email_dtm <- DocumentTermMatrix(train.Clean.Corpus)
-test_email_dtm <- DocumentTermMatrix(test.Clean.Corpus)
-
-# count function
-convert_count <- function(x) {
-  y <- ifelse(x > 0, 1,0)
-  y <- factor(y, levels=c(0,1), labels=c("No", "Yes"))
-  y
-}
-
-train_sms <- apply(train_email_dtm, 2, convert_count)
-test_sms <- apply(test_email_dtm, 2, convert_count)
-
-library(e1071)
-# classification of email
-classifier <- naiveBayes(train_sms, factor(train.Spam.Ham$type))
-
-
-```
-
-
-## STEP 7: Predict the Data
-```{r}
-test_pred <- predict(classifier, newdata=test_sms)
-
-table(test_pred, test.Spam.Ham$type)
-```
-
-
-
-### STEP 8. Conclusion
 
 <div class="minitron">
-  <p class="lead">**Conclusion - Classification** </p>
-    We saw how we could use naiveBayes to accurately predict the Ham vs. Spam.
-    We could similarly use other algorithms like SVM, Random Forest or Maxvent models.
-    
-    My computer despite having 16GB of RAM + GPU kept running our of memory. This made the project bit painful as i kept waiting for hours to see results to see the RStudio crash. I wish the dataset was bit more manageable for us to experiment more.
-    
-    Professor, I also appreciate if you could please teach us spanning instances on AWS to run this code. I would love that!
-    
+  <p class="lead">**Proposed Methodology** </p>
+
+    We have several datasets that I plan to use for various sources.<br> 
+    We plan to adjust wages datasets from Bureau of Labor Statistics for CPI and other factors like Home Prices, Taxes and Recereation options. We would use several different type of visualization like box plots and sctterplots to view and understand that data. We would compute means and medians for these and use regression to analyze these variables.
+  <hr class="my-4">
+
 </div>
 
 

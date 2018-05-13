@@ -1,0 +1,171 @@
+---
+title: 607 Final Project Submission
+author: "Raj Kumar and Violeta Stoyanova"
+date: "May 12th, 2018"
+output:
+  html_document:
+    #css: ./lab.css
+    highlight: pygments
+    theme: cerulean
+    toc: true # table of content true
+    #toc_float: false
+    toc_depth: 4  # upto three depths of headings (specified by #, ## and ###)
+    code_folding: show
+    #theme: united
+  pdf_document: default
+---
+  <h2 class="display-4">Best Places to Live in the USA for Data Scientist</h2>
+
+
+
+![](finalProject/placetolive1.jpg)
+
+<div class="jumbotron">
+  <h2 class="display-4">Final Project Proposal - Finding an Ideal Place to Live</h2>
+  <p class="lead">
+
+There is a quote, "If you want to catch a fish, you have to go where the fish are!"<br>
+In this project, We would try to find good places to live in america for a Data Scientist. The question We are asking is "What place are ideal for technology and management people with families to live?" <br></p>
+
+There is always a big demand of Data Scientist skills everywhere but there are lots of factors that go into making a place an ideal place. Mostly today, Data Scientist are used in Technology, Finance and Pharma areas. We would assume that placces where these jobs are higher would also have higer need for Data Scientists.
+
+Some of the key considerations is always availability of ample work opportunities along with strong wage support. But stronger wages in some areas also come with higher cost of living (like California, Boston or NY) which can be indicated by Consumer Price Index to taxes in certain areas. Along with these, other factors like number of other families, diversity also play a big role in bring up a family. In addition to these, We also plan to search and analyze some additional parameters like availability of recreational facilities like parks in the area.
+</div>
+  <hr class="my-4">
+
+
+<div class="minitron">
+  <p class="lead">**Inspiration - Finding a Happy Place! :) ** </p>
+  <p>
+    Most people end up where they live as a result of uncontrolled events in their life like a new job. A high paying job is important but cannot be the only criteria of determining where to live. Many a times, where a person ends up might not be the best place for that person and takes a toll on his/her happiness. 
+    
+    I (Raj) myself ended up living in New York area as as result of events that occured in my life. I used to be a technology consultant travelling to various clients and having a base near major airports was very important for easier travel. NY itself provides a very stable job market but it comes at very high cost of living due to high taxes and extremely high housing cost. Though I dont travel for work anymore, I have created significant roots in NY area as I have lived here for a while.  
+    
+    But I have often wondered where would I live if I was ever offered a do-over. This project would help me do a very objective analysis and discover what an ideal place for me might look like.
+  </p>
+  <hr class="my-4">
+</div>
+
+
+<div class="minitron">
+  <p class="lead">**Import Libraries** </p>
+  
+```{r echo=FALSE, message=FALSE, results=FALSE}
+# Good Practise: Basic house keeping: cleanup the env before you start new work
+rm(list=ls())
+
+# Garbage collector to free the memory
+gc()
+
+
+# Good Practise: Set up the Working Directory when working with a file system
+setwd("C:\\CUNY\\607Data\\Assignments\\finalProject")
+wdir <- getwd()
+
+```
+
+```{r message=FALSE, warning=FALSE, results=FALSE}
+
+# Read the Data
+lib.list <- c("readxl")    
+
+# Analyze Data
+lib.list <- c(lib.list, 
+                "tidyverse",
+                "DT"
+              )
+
+# Model Data
+lib.list <- c(lib.list, 
+                "modelr",
+                "scales",
+                "car"
+            )
+
+# Plot Data
+lib.list <- c(lib.list, 
+                "maps",
+                "mapdata",
+                "ggmap",
+                "ggrepel",   
+                "plotly",
+                "gridExtra"
+)
+
+lapply(lib.list, require, character.only = TRUE)
+
+```
+
+  <hr class="my-4">
+
+</div>
+
+<div class="minitron">
+  <p class="lead">**Data Loading** </p>
+    1. Wage Date: https://www.bls.gov/mwe/
+    2. Consumer Price Index Data: https://www.bls.gov/cpi/
+    3. Unemployment Data: https://www.bls.gov/web/laus/laumstrk.htm
+    4. State and National Parks: https://en.wikipedia.org/wiki/Lists_of_state_parks_by_U.S._state
+    5. Census Data: https://www.census.gov/data/datasets/2017/demo/popest/nation-detail.html#ds
+    6. Average House Prices: https://www.statisticbrain.com/home-sales-average-price/
+    7. Job Search Engines: https://wwww.indeed.com
+
+    https://www.coursera.org/learn/analytics-tableau/lecture/IIUOH/blending-price-parity-data-with-our-salary-data
+
+```{r}
+
+wage.est <- read_excel("C:\\CUNY\\607Data\\Assignments\\finalProject\\mwe_2016complete.xlsx", 
+                       sheet ="MWE_2016")
+
+wages <-
+  wage.est %>%
+  select(`Average Hourly Wage`, `Area Level`, `Area Text`, `Occupation Text`) %>%
+  filter(!grepl('Alaska|Hawaii|*AK|*HI',`Area Text`))
+
+states <- map_data("state")
+
+head(wages, 100) %>%
+  datatable(options = list(
+  columnDefs = list(list(className = 'dt-center', targets = 1:4))
+  ))
+
+```
+
+  <hr class="my-4">
+
+
+<div class="minitron">
+  <p class="lead">**Data Preperation** </p>
+
+
+```{r}
+
+```
+
+  <hr class="my-4">
+
+
+
+<div class="minitron">
+  <p class="lead">**Possible Proposed Sources** </p>
+    1. Wage Date: https://www.bls.gov/mwe/
+    2. Consumer Price Index Data: https://www.bls.gov/cpi/
+    3. Unemployment Data: https://www.bls.gov/web/laus/laumstrk.htm
+    4. State and National Parks: https://en.wikipedia.org/wiki/Lists_of_state_parks_by_U.S._state
+    5. Census Data: https://www.census.gov/data/datasets/2017/demo/popest/nation-detail.html#ds
+    6. Average House Prices: https://www.statisticbrain.com/home-sales-average-price/
+    7. Job Search Engines: https://wwww.indeed.com
+
+  <hr class="my-4">
+
+</div>
+
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
